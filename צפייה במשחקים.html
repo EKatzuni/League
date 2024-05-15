@@ -155,7 +155,7 @@
                         const cells = entries[i];
                         if (cells.length >= 6) { // Ensure at least 6 columns are available
                             const row = document.createElement('tr');
-                            for (let j = 0; j < 6; j++) { // Displaying only columns 1 to 6
+                            for (let j = 5; j >= 0; j--) { // Displaying only columns 1 to 6
                                 const cellElement = document.createElement('td');
                                 const cellContent = cells[j].trim();
                                 cellElement.textContent = cellContent;
@@ -171,7 +171,7 @@
                     }
 
                     // Set table headers
-                    const tableHeaders = ['מיקום', 'שחקן', 'משחקים', 'נצחונות', 'הפסדים', 'יחס'];
+                    const tableHeaders = ['יחס', 'הפסדים', 'נצחונות', 'משחקים', 'שחקן', 'מיקום'];
                     const headerRow = document.createElement('tr');
                     tableHeaders.forEach(headerText => {
                         const headerCell = document.createElement('th');
