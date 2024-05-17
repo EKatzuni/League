@@ -13,10 +13,6 @@
             color: red;
         }
 
-        H4 {
-            color: red;
-        }
-
         table {
             border-collapse: collapse;
             width: 60%;
@@ -33,29 +29,84 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
+        
+
+        #non-playing-opponents-list li {
+            text-align: right; /* Align text to the right */
+            list-style-type: none; /* Remove bullet points */
+            padding-right: 0; /* Remove default right padding */
+            margin-right: 0; /* Remove default right margin */
+            font-size: 0.8em;
+        }
+
+        #non-playing-opponents-list li::before{
+            content: "\2022"; /* הצגת נקודה ממורכזת */
+            margin-left: 2px; /* רווח בין הנקודה לשם */
+            float: right;
+            margin-top: 0; /* Add top margin */
+            list-style-type: none; /* Remove bullet points */
+            padding-right: 0; /* Remove default right padding */
+            color: black; /* Set color for bullet point */
+        }
+
+        #titles-container {
+            display: flex;
+            align-items: right;
+            justify-content: space-between;
+            margin-bottom: 20px; /* Add margin between titles and lists */
+        }
+
+        #opponents-container {
+            float: right;
+            width: 50%; /* Adjust width as needed */
+            padding-left: 0px; /* Add space between opponents list and games list */
+            display: none; /* Hide opponents list by default */
+        }
+
+        #opponents-container.show {
+            display: block; /* Show opponents list when needed*/
+            font-size: 15px;
+        }
+
+        #titles-container h2 {
+            font-size: 1.5em; /* גודל כותרת משחקים */
+        }
+        #opponents-container h3 {
+            text-align: right;
+            font-size: 1em;
+        }
+
     </style>
 </head>
 <body>
-  
-    <h1>Select a Player / בחירת שחקן</h1>
+
+    <h2>Select a Player / בחירת שחקן</h2>
     <select id="player-select">
         <option value="">Select a player</option>
     </select>
 
-    <h1>Select a Cycle / בחירת מחזור</h1>
+<div id="titles-container">   
+    <div>
+    <h2>Select a Cycle / בחירת מחזור</h2>
     <select id="round-select">
         <option value="">Select a cycle</option>
     </select>
+    </div>
+    <div id="opponents-container">  
+    <h3> יריבים שנשארו<br>Left opponents
+    <br><input type="checkbox" id="show-opponents" name="show-opponents"></h3>
+    </div>
+</div>
 
-    <h2>Games Played / משחקים ששוחקו</h2>
-    <ul id="games-list"></ul>
+    <div id="titles-container">   
+        <div>
+            <h2>Played / שוחקו</h2>
+            <div id="games-list"></div>      
+        </div>
+            <ul id="non-playing-opponents-list"></ul>
+    </div>
 
     <script>
-        // Function to sort player names alphabetically
-        function sortPlayerNames(playerNames) {
-            return playerNames.sort((a, b) => a.localeCompare(b));
-        }
-
         // Google Sheets API Key
         const apiKey = 'AIzaSyAtPWvLQawbcd4vDiMyJk0bQG6AoTzYQZU';
 
@@ -71,20 +122,22 @@
                     const selectPlayerElement = document.getElementById('player-select');
                     const selectRoundElement = document.getElementById('round-select');
                     const gamesList = document.getElementById('games-list');
+                    const nonPlayingOpponentsList = document.getElementById('non-playing-opponents-list');
                     const dataTable = document.getElementById('data-table');
+                    const opponentsContainer = document.getElementById('opponents-container');
+                    const showOpponentsCheckbox = document.getElementById('show-opponents');
 
                     // Populate player selection dropdown
                     const playerNames = [];
                     for (let i = 3; i < entries.length; i++) {
                         const playerName = entries[i][1].trim(); // Assuming player names are in column B
-                        if (playerName && !playerNames.includes(playerName)) {
+                        if (playerName) {
                             playerNames.push(playerName);
                         }
                     }
 
-                    const sortedPlayerNames = sortPlayerNames(playerNames);
-
-                    sortedPlayerNames.forEach(playerName => {
+                    // Sort player names alphabetically
+                    playerNames.sort().forEach(playerName => {
                         const option = document.createElement('option');
                         option.textContent = playerName;
                         option.value = playerName;
@@ -92,17 +145,20 @@
                     });
 
                     // Populate round selection dropdown
-                    const roundOptions = [];
+                    const roundOptions = new Set();
                     for (let i = 3; i < entries.length; i++) {
                         const roundNumber = entries[i][7].trim(); // Assuming round numbers are in column H (column index 7)
-                        if (roundNumber && !roundOptions.includes(roundNumber)) {
-                            roundOptions.push(roundNumber);
-                            const option = document.createElement('option');
-                            option.textContent = `Cycle ${roundNumber}`;
-                            option.value = roundNumber;
-                            selectRoundElement.appendChild(option);
+                        if (roundNumber) {
+                            roundOptions.add(roundNumber);
                         }
                     }
+
+                    roundOptions.forEach(roundNumber => {
+                        const option = document.createElement('option');
+                        option.textContent = `Cycle ${roundNumber}`;
+                        option.value = roundNumber;
+                        selectRoundElement.appendChild(option);
+                    });
 
                     // Function to display games played by selected player and round
                     function displayGames() {
@@ -146,9 +202,72 @@
                         });
                     }
 
+                    // Function to display non-playing opponents for the selected player
+                    function displayNonPlayingOpponents(selectedPlayer) {
+                        nonPlayingOpponentsList.innerHTML = ''; // Clear previous list
+                        
+                        const allPlayers = Array.from(playerNames); // Convert Array to Array (just to make a copy)
+                        
+                        allPlayers.forEach(playerName => {
+                            if (playerName !== selectedPlayer) {
+                                let hasPlayedAgainst = false;
+                                for (let i = 3; i < entries.length; i++) {
+                                    const player = entries[i][9].trim(); // Assuming player names are in column J (column index 9)
+                                    const opponent = entries[i][10].trim(); // Assuming opponent names are in column K (column index 10)
+                                    if (player === selectedPlayer && opponent === playerName) {
+                                        hasPlayedAgainst = true;
+                                        break;
+                                    }
+                                }
+                                if (!hasPlayedAgainst) {
+                                    const listItem = document.createElement('li');
+                                    listItem.textContent = playerName;
+                                    nonPlayingOpponentsList.appendChild(listItem);
+                                }
+                            }
+                        });
+                    }
+
+                    // Event listener for player selection
+                    selectPlayerElement.addEventListener('change', () => {
+                        const selectedPlayer = selectPlayerElement.value;
+                        displayGames(); // Update games list
+                        if (showOpponentsCheckbox.checked) {
+                            displayNonPlayingOpponents(selectedPlayer); // Update non-playing opponents list
+                        }
+                        // Hide opponents list when no player is selected
+                        if (!selectedPlayer) {
+                            opponentsContainer.classList.remove('show');
+                        }
+                    });
+
                     // Event listeners for player and round selection
                     selectPlayerElement.addEventListener('change', displayGames);
-                    selectRoundElement.addEventListener('change', displayGames);
+                    selectRoundElement.addEventListener('change', () => {
+                        displayGames();
+                        if (showOpponentsCheckbox.checked) {
+                            displayNonPlayingOpponents(selectPlayerElement.value);
+                        }
+                    });
+
+                    // Show opponents list when player is selected
+                    selectPlayerElement.addEventListener('change', () => {
+                        if (selectPlayerElement.value) {
+                            opponentsContainer.classList.add('show');
+                        } else {
+                            opponentsContainer.classList.remove('show');
+                        }
+                    });
+
+                    // Event listener for showing/hiding non-playing opponents
+                    showOpponentsCheckbox.addEventListener('change', () => {
+                        const selectedPlayer = selectPlayerElement.value;
+                        if (showOpponentsCheckbox.checked && selectedPlayer) {
+                            displayNonPlayingOpponents(selectedPlayer);
+                        } else {
+                            nonPlayingOpponentsList.innerHTML = ''; // Clear opponents list
+                        }
+                    });
 
                     // Display data table from row 4
                     for (let i = 3; i < 36; i++) {
@@ -169,7 +288,6 @@
                             dataTable.appendChild(row);
                         }
                     }
-
                     // Set table headers
                     const tableHeaders = ['יחס', 'הפסדים', 'נצחונות', 'משחקים', 'שחקן', 'מיקום'];
                     const headerRow = document.createElement('tr');
@@ -187,7 +305,7 @@
         fetchDataFromGoogleSheets();
     </script>
 
-    <h2>Summarizing table / טבלה מסכמת</h2>
+    <h2>טבלה מסכמת<br>Summarizing table</h2>
     <table id="data-table">
         <tbody id="data-body"></tbody>
     </table>
