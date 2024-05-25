@@ -84,7 +84,7 @@
 </head>
 <body>
 
-    <h2>Select a Player / בחירת שחקן</h2>
+        <h2>Select a Player / בחירת שחקן</h2>
     <select id="player-select">
         <option value="">Select a player</option>
     </select>
@@ -96,10 +96,7 @@
                 <option value="">Select a cycle</option>
             </select>
         </div>
-        <div id="opponents-container">  
-            <h3> יריבים שנשארו<br>Left opponents
-                <br><input type="checkbox" id="show-opponents" name="show-opponents"></h3>
-        </div>
+
     </div>
 
     <div id="titles-container">   
@@ -107,7 +104,11 @@
             <h2>Played / שוחקו</h2>
             <div id="games-list"></div>      
         </div>
-        <ul id="non-playing-opponents-list"></ul>
+        <div id="opponents-container">  
+            <h3> יריבים שנשארו<br>Left opponents
+                <br><input type="checkbox" id="show-opponents" name="show-opponents"></h3>
+                <ul id="non-playing-opponents-list"></ul>
+        </div>
     </div>
 
     <script>
