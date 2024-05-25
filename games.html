@@ -130,6 +130,30 @@
                     const dataTable = document.getElementById('data-table');
                     const opponentsContainer = document.getElementById('opponents-container');
                     const showOpponentsCheckbox = document.getElementById('show-opponents');
+                    
+                    displayUpdateTime(entries);
+                    // Display the last update time written in colum P (Index 15)
+                    function displayUpdateTime(entries) {
+                        const updateTime = entries[1][15]; // Assuming row 2 and column P (column index 15)
+                        const container = document.createElement('div'); // Create a container for both elements
+                        container.style.display = "inline"; // Set the container to display inline
+
+                        const secondCellTitle = document.createElement('h3');
+                        secondCellTitle.textContent = " :Updated / עודכן";
+                        secondCellTitle.style.display = "inline"; // Set the title to display inline
+                        secondCellTitle.style.color = "blue";
+
+                        const secondCellContainer = document.createElement('div');
+                        secondCellContainer.textContent = updateTime;
+                        secondCellContainer.style.display = "inline"; // Set the value to display inline
+                        secondCellContainer.style.color = "blue";
+                        secondCellContainer.style.fontWeight = "bold";
+
+                        container.appendChild(secondCellContainer); // Append the value to the container
+                        container.appendChild(secondCellTitle); // Append the title to the container
+
+                        document.body.insertBefore(container, document.body.firstChild); // Insert the container at the beginning of the body
+                    }       
 
                     // Populate player selection dropdown
                     const playerNames = [];
@@ -357,6 +381,7 @@
 
                     // Call function to color cells based on games played compared to average
                     colorCells();
+
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
