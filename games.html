@@ -8,13 +8,13 @@
         .winner {
             color: green;
         }
-
         .loser {
             color: red;
         }
 
         table {
             border-collapse: collapse;
+            width: 120%;
             width: 100%;
             margin-top: 20px;
         }
@@ -30,7 +30,6 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
-
         #non-playing-opponents-list li {
             text-align: right; /* Align text to the right */
             list-style-type: none; /* Remove bullet points */
@@ -38,7 +37,6 @@
             margin-right: 0; /* Remove default right margin */
             font-size: 0.6em;
         }
-
         #non-playing-opponents-list li::before {
             content: "\2022"; /* הצגת נקודה ממורכזת */
             margin-left: 1px; /* רווח בין הנקודה לשם */
@@ -48,30 +46,25 @@
             padding-right: 0; /* Remove default right padding */
             color: black; /* Set color for bullet point */
         }
-
         #titles-container {
             display: flex;
             align-items: right;
             justify-content: space-between;
             /* margin-bottom: 20px; Add margin between titles and lists */
         }
-
         #opponents-container {
             float: right;
             width: 35%; /* Adjust width as needed */
             padding-left: 0px; /* Add space between opponents list and games list */
             display: none; /* Hide opponents list by default */
         }
-
         #opponents-container.show {
             display: block; /* Show opponents list when needed*/
             font-size: 20px;
         }
-
         #titles-container h2 {
             font-size: 1.5em; /* גודל כותרת משחקים */
         }
-
         #opponents-container h6 {
             text-align: center;
             /*font-size: 0.7em;*/
@@ -80,30 +73,21 @@
         #games-list li span {
             font-size: 0.8em; /* הקטנת הפונט ברשימת המשחקים */
         }
-
         /*.below-average {
             background-color: rgb(255, 0, 0);
         }*/
-
     </style>
 </head>
 <body>
-
         <h2>Select a Player / בחירת שחקן</h2>
     <select id="player-select">
         <option value="">Select a player</option>
     </select>
-
     <div id="titles-container">   
         <div>
-            <h2>Select a Cycle / בחירת מחזור</h2>
-            <select id="round-select">
-                <option value="">Select a cycle</option>
-            </select>
+            <h2>Cycle / מחזור</h2>
         </div>
-
     </div>
-
     <div id="titles-container">   
         <div>
             <h2>Played / שוחקו</h2>
@@ -114,14 +98,11 @@
                 <ul id="non-playing-opponents-list"></ul>
         </div>
     </div>
-
     <script>
         // Google Sheets API Key
         const apiKey = 'AIzaSyAtPWvLQawbcd4vDiMyJk0bQG6AoTzYQZU';
-
         // Google Sheets Spreadsheet ID
         const spreadsheetId = '1QJCNQVtXOf2NF6R0uzbhi8own5hf0_E0K8QoailgMk4';
-
         // Fetch data from Google Sheets API
         function fetchDataFromGoogleSheets() {
             fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1?key=${apiKey}`)
@@ -129,7 +110,6 @@
                 .then(data => {
                     const entries = data.values;
                     const selectPlayerElement = document.getElementById('player-select');
-                    const selectRoundElement = document.getElementById('round-select');
                     const gamesList = document.getElementById('games-list');
                     const nonPlayingOpponentsList = document.getElementById('non-playing-opponents-list');
                     const dataTable = document.getElementById('data-table');
@@ -142,24 +122,19 @@
                         const updateTime = entries[1][15]; // Assuming row 2 and column P (column index 15)
                         const container = document.createElement('div'); // Create a container for both elements
                         container.style.display = "inline"; // Set the container to display inline
-
                         const secondCellTitle = document.createElement('h3');
                         secondCellTitle.textContent = " :Updated / עודכן";
                         secondCellTitle.style.display = "inline"; // Set the title to display inline
                         secondCellTitle.style.color = "blue";
-
                         const secondCellContainer = document.createElement('div');
                         secondCellContainer.textContent = updateTime;
                         secondCellContainer.style.display = "inline"; // Set the value to display inline
                         secondCellContainer.style.color = "blue";
                         secondCellContainer.style.fontWeight = "bold";
-
                         container.appendChild(secondCellContainer); // Append the value to the container
                         container.appendChild(secondCellTitle); // Append the title to the container
-
                         document.body.insertBefore(container, document.body.firstChild); // Insert the container at the beginning of the body
                     }       
-
                     // Populate player selection dropdown
                     const playerNames = [];
                     for (let i = 3; i < entries.length; i++) {
@@ -168,7 +143,6 @@
                             playerNames.push(playerName);
                         }
                     }
-
                     // Sort player names alphabetically
                     playerNames.sort().forEach(playerName => {
                         const option = document.createElement('option');
@@ -176,48 +150,26 @@
                         option.value = playerName;
                         selectPlayerElement.appendChild(option);
                     });
-
-                    // Populate round selection dropdown
-                    const roundOptions = new Set();
-                    for (let i = 3; i < entries.length; i++) {
-                        const roundNumber = entries[i][6].trim(); // Assuming round numbers are in column G (column index 6)
-                        if (roundNumber) {
-                            roundOptions.add(roundNumber);
-                        }
-                    }
-
-                    roundOptions.forEach(roundNumber => {
-                        const option = document.createElement('option');
-                        option.textContent = `Cycle ${roundNumber}`;
-                        option.value = roundNumber;
-                        selectRoundElement.appendChild(option);
-                    });
-
                     // Function to display games played by selected player and round
                     function displayGames() {
                         const selectedPlayer = selectPlayerElement.value;
-                        const selectedRound = selectRoundElement.value;
                         gamesList.innerHTML = ''; // Clear previous games
-
                         let currentCycleTitle;
-
                         entries.forEach((entry, index) => {
                             if (index >= 3) {
                                 const player = entry[9].trim(); // Assuming player names are in column J (column index 9)
-                                const round = entry[6].trim(); // Assuming round numbers are in column G (column index 6)
-                                if (player === selectedPlayer && (!selectedRound || round === selectedRound)) {
+                                if (player === selectedPlayer) {
+                                    const round = entry[6].trim(); // Assuming round numbers are in column G (column index 6)
                                     const playerScore = parseFloat(entry[11].trim()); // Assuming player's score is in column L (column index 11)
                                     const opponentScore = parseFloat(entry[12].trim()); // Assuming opponent's score is in column M (column index 12)
                                     const isPlayerWinner = playerScore > opponentScore;
                                     const isOpponentWinner = playerScore < opponentScore;
-
                                     if (round !== currentCycleTitle) { // Check if a new cycle has started
                                         const cycleTitle = document.createElement('h3');
                                         cycleTitle.textContent = `Cycle ${round}`;
                                         gamesList.appendChild(cycleTitle);
                                         currentCycleTitle = round;
                                     }
-
                                     const gameItem = document.createElement('li');
                                     const gameSpan = document.createElement('span');
                                     const gameText = [player, entry[10].trim(), entry[11].trim(), entry[12].trim()].join(' - '); // Combine player, opponent, and scores
@@ -234,13 +186,10 @@
                             }
                         });
                     }
-
                     // Function to display non-playing opponents for the selected player
                     function displayNonPlayingOpponents(selectedPlayer) {
                         nonPlayingOpponentsList.innerHTML = ''; // Clear previous list
-
                         const allPlayers = Array.from(playerNames); // Convert Array to Array (just to make a copy)
-
                         allPlayers.forEach(playerName => {
                             if (playerName !== selectedPlayer) {
                                 let hasPlayedAgainst = false;
@@ -260,7 +209,6 @@
                             }
                         });
                     }
-
                     // Function to calculate and display percentage of games played next to player name
                     function displayGamesPercentage() {
                         const selectedPlayer = selectPlayerElement.value;
@@ -275,12 +223,9 @@
                             }
                         });
                         const percentage = ((playerGames / (playerNames.length - 1)) * 100).toFixed(1);
-
-
                         const playerOption = document.querySelector(`#player-select option[value="${selectedPlayer}"]`);
                         playerOption.textContent = `${selectedPlayer} (${percentage}%)`;
                     }
-
                     // Event listener for player selection
                     selectPlayerElement.addEventListener('change', () => {
                         const selectedPlayer = selectPlayerElement.value;
@@ -293,16 +238,8 @@
                             opponentsContainer.classList.remove('show');
                         }
                     });
-
                     // Event listeners for player and round selection
                     selectPlayerElement.addEventListener('change', displayGames);
-                    selectRoundElement.addEventListener('change', () => {
-                        displayGames();
-                        if (showOpponentsCheckbox.checked) {
-                            displayNonPlayingOpponents(selectPlayerElement.value);
-                        }
-                    });
-
                     // Show opponents list when player is selected
                     selectPlayerElement.addEventListener('change', () => {
                         if (selectPlayerElement.value) {
@@ -311,7 +248,6 @@
                             opponentsContainer.classList.remove('show');
                         }
                     });
-
                     // Event listener for showing/hiding non-playing opponents
                     showOpponentsCheckbox.addEventListener('change', () => {
                         const selectedPlayer = selectPlayerElement.value;
@@ -326,7 +262,6 @@
                         const playerRows = document.querySelectorAll('#data-table tr');
                         let totalGames = 0;
                         let playerCount = 0;
-
                         playerRows.forEach(row => {
                             const gamesPlayedCell = row.children[3]; // Assuming games played are in the 4th column (index 3)
                             const gamesPlayed = parseInt(gamesPlayedCell.textContent.trim());
@@ -335,15 +270,12 @@
                                 playerCount++;
                             }
                         });
-
                         return playerCount > 0 ? totalGames / playerCount : 0;
                     }
-
                     // Color cells based on the number of games played compared to the average
                     function colorCells() {
                         const playerRows = document.querySelectorAll('#data-table tr');
                         const averageGames = calculateAverageGames();
-
                         playerRows.forEach(row => {
                             const gamesPlayedCell = row.children[3]; // Assuming games played are in the 4th column (index 3)
                             const gamesPlayed = parseInt(gamesPlayedCell.textContent.trim());
@@ -352,7 +284,6 @@
                             }
                         });
                     }
-
                     // Display data table from row 4
                     for (let i = 3; i < 36; i++) {
                         const cells = entries[i];
@@ -383,18 +314,14 @@
                     dataTable.insertBefore(headerRow, dataTable.firstChild);
                     // Call function to display games percentage when player selection changes
                     selectPlayerElement.addEventListener('change', displayGamesPercentage);
-
                     // Call function to color cells based on games played compared to average
                     colorCells();
-
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
-
         // Call function to fetch data from Google Sheets API
         fetchDataFromGoogleSheets(); 
     </script>
-
     <h2>טבלה מסכמת<br>Summarizing table</h2>
     <table id="data-table">
         <tbody id="data-body"></tbody>
