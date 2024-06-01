@@ -30,12 +30,21 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
+
+        td button {
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: inherit;
+            color: inherit;
+            /*text-decoration: underline;*/
+        }
         #non-playing-opponents-list li {
             text-align: right; /* Align text to the right */
             list-style-type: none; /* Remove bullet points */
             padding-right: 0; /* Remove default right padding */
             margin-right: 0; /* Remove default right margin */
-            font-size: 0.6em;
+            font-size: 0.71em;
         }
         #non-playing-opponents-list li::before {
             content: "\2022"; /* הצגת נקודה ממורכזת */
@@ -54,46 +63,123 @@
         }
         #opponents-container {
             float: right;
-            width: 35%; /* Adjust width as needed */
+            width: 10%; /* Adjust width as needed */
             padding-left: 0px; /* Add space between opponents list and games list */
             display: none; /* Hide opponents list by default */
         }
         #opponents-container.show {
             display: block; /* Show opponents list when needed*/
-            font-size: 20px;
+            font-size: 30px;
         }
         #titles-container h2 {
             font-size: 1.5em; /* גודל כותרת משחקים */
         }
-        #opponents-container h6 {
-            text-align: center;
+        
+        h5 {
+            text-align: right;
+            padding-right: 0px; /* הוספת padding מימין */
             /*font-size: 0.7em;*/
+        }
+
+        h2 {
+            font-size: 1.4em;
         }
         
         #games-list li span {
-            font-size: 0.8em; /* הקטנת הפונט ברשימת המשחקים */
+            font-size: 0.75em; /* הקטנת הפונט ברשימת המשחקים */
         }
         /*.below-average {
             background-color: rgb(255, 0, 0);
         }*/
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 95%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .lists-container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #remaining-opponents-count {
+            text-align: center; /* ממורכז לימין */
+            margin-top: -15px; /* צמצום הרווח למעלה */
+            margin-bottom: -10px; /* צמצום הרווח למטה */
+            font-weight: bold;
+        }
+
     </style>
 </head>
 <body>
-        <h2>Select a Player / בחירת שחקן</h2>
-    <select id="player-select">
-        <option value="">Select a player</option>
-    </select>
+    <h2>Summarizing table / טבלה מסכמת</h2>
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>יחס</th>
+                <th>הפסדים</th>
+                <th>נצחונות</th>
+                <th>משחקים</th>
+                <th>שחקן</th>
+                <th>מיקום</th>
+            </tr>
+        </thead>
+        <tbody id="data-body"></tbody>
+    </table>
 
-    <div id="titles-container">   
-        <div>
-            <h2>Played / שוחקו</h2>
-            <div id="games-list"></div>      
-        </div>
-        <div id="opponents-container">  
-            <h6><input type="checkbox" id="show-opponents" name="show-opponents"><br>יריבים שנשארו<br>Left opponents</h6>
-                <ul id="non-playing-opponents-list"></ul>
+    <div id="player-buttons"></div>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="lists-container">
+                <div>
+                    <h2>Played / שוחקו</h2>
+                    <div id="games-list"></div>
+                </div>
+                <div>
+                    <h5>יריבים שנשארו <br>Left opponents</h5>
+                    <ul id="remaining-opponents-count"></ul>
+                    <ul id="non-playing-opponents-list"></ul>
+                </div>
+            </div>
         </div>
     </div>
+
     <script>
         // Google Sheets API Key
         const apiKey = 'AIzaSyAtPWvLQawbcd4vDiMyJk0bQG6AoTzYQZU';
@@ -105,33 +191,11 @@
                 .then(response => response.json())
                 .then(data => {
                     const entries = data.values;
-                    const selectPlayerElement = document.getElementById('player-select');
-                    const gamesList = document.getElementById('games-list');
-                    const nonPlayingOpponentsList = document.getElementById('non-playing-opponents-list');
-                    const dataTable = document.getElementById('data-table');
-                    const opponentsContainer = document.getElementById('opponents-container');
-                    const showOpponentsCheckbox = document.getElementById('show-opponents');
-                    
-                    displayUpdateTime(entries);
-                    // Display the last update time written in colum P (Index 15)
-                    function displayUpdateTime(entries) {
-                        const updateTime = entries[1][15]; // Assuming row 2 and column P (column index 15)
-                        const container = document.createElement('div'); // Create a container for both elements
-                        container.style.display = "inline"; // Set the container to display inline
-                        const secondCellTitle = document.createElement('h3');
-                        secondCellTitle.textContent = " :Updated / עודכן";
-                        secondCellTitle.style.display = "inline"; // Set the title to display inline
-                        secondCellTitle.style.color = "blue";
-                        const secondCellContainer = document.createElement('div');
-                        secondCellContainer.textContent = updateTime;
-                        secondCellContainer.style.display = "inline"; // Set the value to display inline
-                        secondCellContainer.style.color = "blue";
-                        secondCellContainer.style.fontWeight = "bold";
-                        container.appendChild(secondCellContainer); // Append the value to the container
-                        container.appendChild(secondCellTitle); // Append the title to the container
-                        document.body.insertBefore(container, document.body.firstChild); // Insert the container at the beginning of the body
-                    }       
-                    // Populate player selection dropdown
+                    const playerButtonsContainer = document.getElementById('player-buttons');
+                    const modal = document.getElementById('myModal');
+                    const modalClose = document.getElementsByClassName('close')[0];
+
+                    // Populate player selection buttons
                     const playerNames = [];
                     for (let i = 3; i < entries.length; i++) {
                         const playerName = entries[i][1].trim(); // Assuming player names are in column B
@@ -139,18 +203,69 @@
                             playerNames.push(playerName);
                         }
                     }
-                    // Sort player names alphabetically
                     playerNames.sort().forEach(playerName => {
-                        const option = document.createElement('option');
-                        option.textContent = playerName;
-                        option.value = playerName;
-                        selectPlayerElement.appendChild(option);
+                        const button = document.createElement('button');
+                        button.textContent = playerName;
+                        button.addEventListener('click', () => displayGames(playerName));
+                        //playerButtonsContainer.appendChild(button);
                     });
-                    // Function to display games played by selected player and round
-                    function displayGames() {
-                        const selectedPlayer = selectPlayerElement.value;
+
+                    // Populate summary table
+                    const dataBody = document.getElementById('data-body');
+                    for (let i = 3; i < Math.min(entries.length, 36); i++) {
+                        const position = entries[i][0].trim();
+                        const playerName = entries[i][1].trim();
+                        const gamesPlayed = entries[i][2].trim();
+                        const wins = entries[i][3].trim();
+                        const losses = entries[i][4].trim();
+                        const ratio = entries[i][5].trim();
+                        
+                        const row = document.createElement('tr');
+                        const positionCell = document.createElement('td');
+                        positionCell.textContent = position;
+                        const nameCell = document.createElement('td');
+                        const nameButton = document.createElement('button');
+                        nameButton.textContent = playerName;
+                        nameButton.addEventListener('click', () => displayGames(playerName));
+                        nameCell.appendChild(nameButton);
+                        const gamesPlayedCell = document.createElement('td');
+                        gamesPlayedCell.textContent = gamesPlayed;
+                        const winsCell = document.createElement('td');
+                        winsCell.textContent = wins;
+                        const lossesCell = document.createElement('td');
+                        lossesCell.textContent = losses;
+                        const ratioCell = document.createElement('td');
+                        ratioCell.textContent = ratio;
+                        
+                        // Check if ratio is -100
+                        if (parseInt(ratio) === -100) {
+                            ratioCell.style.color = 'white'; // Set text color to white
+                        }
+                        
+                        row.appendChild(ratioCell);
+                        row.appendChild(lossesCell);
+                        row.appendChild(winsCell);
+                        row.appendChild(gamesPlayedCell);
+                        row.appendChild(nameCell);
+                        row.appendChild(positionCell);
+
+                        dataBody.appendChild(row);
+                    }
+
+                    // Call function to display last update time
+                    displayUpdateTime(entries);
+
+                    // Call function to color cells based on games played compared to average
+                    colorCells(); // Add this line to call the colorCells function after fetching data
+
+                    // Function to display games played by selected player
+                    function displayGames(selectedPlayer) {
+                        const gamesList = document.getElementById('games-list');
+                        const nonPlayingOpponentsList = document.getElementById('non-playing-opponents-list');
                         gamesList.innerHTML = ''; // Clear previous games
+                        nonPlayingOpponentsList.innerHTML = ''; // Clear previous opponents
                         let currentCycleTitle;
+                        const opponentsPlayed = []; // Array to store opponents played by the selected player
                         entries.forEach((entry, index) => {
                             if (index >= 3) {
                                 const player = entry[9].trim(); // Assuming player names are in column J (column index 9)
@@ -178,149 +293,113 @@
                                     }
                                     gameItem.appendChild(gameSpan);
                                     gamesList.appendChild(gameItem);
+                                    opponentsPlayed.push(entry[1].trim()); // Add opponent to the list of opponents played by the selected player
                                 }
                             }
                         });
+                        // Show modal
+                        modal.style.display = 'block';
+                        // Populate non-playing opponents list
+                        displayNonPlayingOpponents(selectedPlayer, opponentsPlayed);
                     }
                     // Function to display non-playing opponents for the selected player
-                    function displayNonPlayingOpponents(selectedPlayer) {
+                    function displayNonPlayingOpponents(selectedPlayer, opponentsPlayed) {
+                        const nonPlayingOpponentsList = document.getElementById('non-playing-opponents-list');
                         nonPlayingOpponentsList.innerHTML = ''; // Clear previous list
-                        const allPlayers = Array.from(playerNames); // Convert Array to Array (just to make a copy)
-                        allPlayers.forEach(playerName => {
-                            if (playerName !== selectedPlayer) {
+                        let remainingOpponentsCount = 0; // Initialize count of remaining opponents
+                        playerNames.forEach(playerName => {
+                            if (playerName !== selectedPlayer && !opponentsPlayed.includes(playerName)) {
                                 let hasPlayedAgainst = false;
-                                for (let i = 3; i < entries.length; i++) {
-                                    const player = entries[i][9].trim(); // Assuming player names are in column J (column index 9)
-                                    const opponent = entries[i][10].trim(); // Assuming opponent names are in column K (column index 10)
-                                    if (player === selectedPlayer && opponent === playerName) {
-                                        hasPlayedAgainst = true;
-                                        break;
+                                entries.forEach((entry, index) => {
+                                    if (index >= 3) {
+                                        const player = entry[9].trim(); // Assuming player names are in column J (column index 9)
+                                        const opponent = entry[10].trim(); // Assuming opponent names are in column K (column index 10)
+                                        if (player === selectedPlayer.trim() && opponent === playerName.trim()) {
+                                            hasPlayedAgainst = true;
+                                        }
                                     }
-                                }
+                                });
                                 if (!hasPlayedAgainst) {
-                                    const listItem = document.createElement('li');
-                                    listItem.textContent = playerName;
-                                    nonPlayingOpponentsList.appendChild(listItem);
+                                    const opponentListItem = document.createElement('li');
+                                    opponentListItem.textContent = playerName;
+                                    nonPlayingOpponentsList.appendChild(opponentListItem);
+                                    remainingOpponentsCount++; // Increment count of remaining opponents
                                 }
                             }
                         });
+                    // Display the count of remaining opponents
+                    const remainingOpponentsCountElement = document.getElementById('remaining-opponents-count');
+                    remainingOpponentsCountElement.textContent = remainingOpponentsCount;
                     }
-                    // Function to calculate and display percentage of games played next to player name
-                    function displayGamesPercentage() {
-                        const selectedPlayer = selectPlayerElement.value;
-                        const totalGames = 100; // Assuming total games
-                        let playerGames = 0;
-                        entries.forEach((entry, index) => {
-                            if (index >= 3) {
-                                const player = entry[9].trim(); // Assuming player names are in column J (column index 9)
-                                if (player === selectedPlayer) {
-                                    playerGames++;
-                                }
-                            }
-                        });
-                        const percentage = ((playerGames / (playerNames.length - 1)) * 100).toFixed(1);
-                        const playerOption = document.querySelector(`#player-select option[value="${selectedPlayer}"]`);
-                        playerOption.textContent = `${selectedPlayer} (${percentage}%)`;
+
+                    // Close modal when clicking on the close button
+                    modalClose.onclick = function() {
+                        modal.style.display = 'none';
                     }
-                    // Event listener for player selection
-                    selectPlayerElement.addEventListener('change', () => {
-                        const selectedPlayer = selectPlayerElement.value;
-                        displayGames(); // Update games list
-                        if (showOpponentsCheckbox.checked) {
-                            displayNonPlayingOpponents(selectedPlayer); // Update non-playing opponents list
-                        }
-                        // Hide opponents list when no player is selected
-                        if (!selectedPlayer) {
-                            opponentsContainer.classList.remove('show');
-                        }
-                    });
-                    // Event listeners for player and round selection
-                    selectPlayerElement.addEventListener('change', displayGames);
-                    // Show opponents list when player is selected
-                    selectPlayerElement.addEventListener('change', () => {
-                        if (selectPlayerElement.value) {
-                            opponentsContainer.classList.add('show');
-                        } else {
-                            opponentsContainer.classList.remove('show');
-                        }
-                    });
-                    // Event listener for showing/hiding non-playing opponents
-                    showOpponentsCheckbox.addEventListener('change', () => {
-                        const selectedPlayer = selectPlayerElement.value;
-                        if (showOpponentsCheckbox.checked && selectedPlayer) {
-                            displayNonPlayingOpponents(selectedPlayer);
-                        } else {
-                            nonPlayingOpponentsList.innerHTML = ''; // Clear opponents list
-                        }
-                    });
-                    // Calculate the average number of games played by all players
-                    function calculateAverageGames() {
-                        const playerRows = document.querySelectorAll('#data-table tr');
-                        let totalGames = 0;
-                        let playerCount = 0;
-                        playerRows.forEach(row => {
-                            const gamesPlayedCell = row.children[3]; // Assuming games played are in the 4th column (index 3)
-                            const gamesPlayed = parseInt(gamesPlayedCell.textContent.trim());
-                            if (!isNaN(gamesPlayed)) {
-                                totalGames += gamesPlayed;
-                                playerCount++;
-                            }
-                        });
-                        return playerCount > 0 ? totalGames / playerCount : 0;
-                    }
-                    // Color cells based on the number of games played compared to the average
-                    function colorCells() {
-                        const playerRows = document.querySelectorAll('#data-table tr');
-                        const averageGames = calculateAverageGames();
-                        playerRows.forEach(row => {
-                            const gamesPlayedCell = row.children[3]; // Assuming games played are in the 4th column (index 3)
-                            const gamesPlayed = parseInt(gamesPlayedCell.textContent.trim());
-                            if (!isNaN(gamesPlayed) && gamesPlayed < averageGames) {
-                                gamesPlayedCell.style.backgroundColor = 'rgb(255, 183, 183)';
-                            }
-                        });
-                    }
-                    // Display data table from row 4
-                    for (let i = 3; i < 36; i++) {
-                        const cells = entries[i];
-                        if (cells.length >= 6) { // Ensure at least 6 columns are available
-                            const row = document.createElement('tr');
-                            for (let j = 5; j >= 0; j--) { // Displaying only columns 1 to 6
-                                const cellElement = document.createElement('td');
-                                const cellContent = cells[j].trim();
-                                cellElement.textContent = cellContent;
-                                row.appendChild(cellElement);
-                                // Apply style for cells with numbers less than -100
-                                if (j === 5 && !isNaN(cellContent) && parseInt(cellContent) === -100) {
-                                    cellElement.style.backgroundColor = 'white'; // Change background color to white
-                                    cellElement.style.color = 'white'; // Change text color to white
-                                }
-                            }
-                            dataTable.appendChild(row);
+
+                    // Close modal when clicking outside the modal
+                    window.onclick = function(event) {
+                        if (event.target === modal) {
+                            modal.style.display = 'none';
                         }
                     }
-                    // Set table headers
-                    const tableHeaders = ['יחס', 'הפסדים', 'נצחונות', 'משחקים', 'שחקן', 'מיקום'];
-                    const headerRow = document.createElement('tr');
-                    tableHeaders.forEach(headerText => {
-                        const headerCell = document.createElement('th');
-                        headerCell.textContent = headerText;
-                        headerRow.appendChild(headerCell);
-                    });
-                    dataTable.insertBefore(headerRow, dataTable.firstChild);
-                    // Call function to display games percentage when player selection changes
-                    selectPlayerElement.addEventListener('change', displayGamesPercentage);
-                    // Call function to color cells based on games played compared to average
-                    colorCells();
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
+
+        // Function to display the last update time
+        function displayUpdateTime(entries) {
+            const updateTime = entries[1][15]; // Assuming row 2 and column P (column index 15)
+            const container = document.createElement('div'); // Create a container for both elements
+            container.style.display = "inline"; // Set the container to display inline
+            const secondCellTitle = document.createElement('h3');
+            secondCellTitle.textContent = " :Updated / עודכן";
+            secondCellTitle.style.display = "inline"; // Set the title to display inline
+            secondCellTitle.style.color = "blue";
+            const secondCellContainer = document.createElement('div');
+            secondCellContainer.textContent = updateTime;
+            secondCellContainer.style.display = "inline"; // Set the value to display inline
+            secondCellContainer.style.color = "blue";
+            secondCellContainer.style.fontWeight = "bold";
+            container.appendChild(secondCellContainer); // Append the value to the container
+            container.appendChild(secondCellTitle); // Append the title to the container
+            document.body.insertBefore(container, document.body.firstChild); // Insert the container at the beginning of the body
+        }
+
+        // Calculate the average number of games played by all players
+        function calculateAverageGames() {
+            const playerRows = document.querySelectorAll('#data-table tr');
+            let totalGames = 0;
+            let playerCount = 0;
+
+            playerRows.forEach(row => {
+                const gamesPlayedCell = row.children[3]; // Assuming games played are in the 4th column (index 3)
+                const gamesPlayed = parseInt(gamesPlayedCell.textContent.trim());
+                if (!isNaN(gamesPlayed)) {
+                    totalGames += gamesPlayed;
+                    playerCount++;
+                }
+            });
+
+            return playerCount > 0 ? totalGames / playerCount : 0;
+        }
+
+        // Color cells based on the number of games played compared to the average
+        function colorCells() {
+            const playerRows = document.querySelectorAll('#data-table tr');
+            const averageGames = calculateAverageGames();
+
+            playerRows.forEach(row => {
+                const gamesPlayedCell = row.children[3]; // Assuming games played are in the 4th column (index 3)
+                const gamesPlayed = parseInt(gamesPlayedCell.textContent.trim());
+                if (!isNaN(gamesPlayed) && gamesPlayed < averageGames) {
+                    gamesPlayedCell.style.backgroundColor = 'rgb(255, 183, 183)';
+                }
+            });
+        }
+
         // Call function to fetch data from Google Sheets API
-        fetchDataFromGoogleSheets(); 
+        fetchDataFromGoogleSheets();
     </script>
-    <h2>טבלה מסכמת<br>Summarizing table</h2>
-    <table id="data-table">
-        <tbody id="data-body"></tbody>
-    </table>
 </body>
 </html>
