@@ -14,7 +14,6 @@
 
         table {
             border-collapse: collapse;
-            width: 120%;
             width: 100%;
             margin-top: 20px;
         }
@@ -253,13 +252,7 @@
                         if (playerName) {
                             playerNames.push(playerName);
                         }
-                    }
-                    playerNames.sort().forEach(playerName => {
-                        const button = document.createElement('button');
-                        button.textContent = playerName;
-                        button.addEventListener('click', () => displayGames(playerName));
-                        //playerButtonsContainer.appendChild(button);
-                    });
+                    };
 
                     // Populate summary table
                     const dataBody = document.getElementById('data-body');
